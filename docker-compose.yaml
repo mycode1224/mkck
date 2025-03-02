@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  proxy:
+    image: bitnami/openresty:latest
+    ports:
+      - 80:80
+    volumes:
+      - ./proxy.conf:/opt/bitnami/openresty/nginx/conf/server_blocks/default.conf:ro
+      - ./index.lua:/var/www/html/index.lua:ro
+    environment:
+      - FLAG=fake{flag}
+    networks:
+      - internal
+    depends_on:
+      - bot
+      - js
+    command: bash -c "openresty -g 'daemon off;' && sleep infinity"
+  js:
+    build: .
+    restart: on-failure
+    networks:
+      - internal
+  bot:
+    build: bot
+    environment:
+      APPNAME: Admin
+      APPURL: http://proxy/
+      APPURLREGEX: ^(http|https)://.*$
+      APPFLAG: fake{flag}
+      APPLIMIT: 2
+      APPLIMITTIME: 60
+      USE_PROXY: 1
+    networks:
+      - internal
+
+networks:
+  internal:
